@@ -98,9 +98,6 @@ class ParsedText extends React.Component {
         if (ReactNative.Platform.OS === 'android') {
           const { style: parentStyle } = this.props;
           const { style, ...remainder } = props;
-          if (typeof props.children === 'string') {
-            props.children = props.children.replace(/\n/ig, '');
-          }
           if (style && style.textAlign === 'center') {
             parts.push({ wrapType: 'Text', items: row });
             row = [];
@@ -116,14 +113,18 @@ class ParsedText extends React.Component {
             parts.push({ wrapType: 'View', items: row });
             row = [];
           } else {
-            row.push({
-              wrapType: 'Text',
-              el: (<ReactNative.Text
-                key={`parsedText-${index}-text`}
-                {...this.props.childrenProps}
-                {...props}
-                style={[parentStyle, style]}
-              />)
+            const splitTextbyRows = props.children.split(/\n/);
+            splitTextbyRows.forEach((r, i) => {
+              props.children = r;
+              row.push({
+                wrapType: 'View',
+                el: (<ReactNative.Text
+                  key={`parsedText-${index}-${i}-text`}
+                  {...this.props.childrenProps}
+                  {...props}
+                  style={[parentStyle, style]}
+                />)
+              });
             });
           }
         }
