@@ -135,6 +135,12 @@ class ParsedText extends React.Component {
     }
     return parts.map((part, index) => {
       if (part.wrapType === 'Text') {
+        const renderedText = part.items.reduce((p, c) => {
+          return p + c.el.props.children;
+        }, "");
+        if (!renderedText && index === 0) {
+          return null;
+        }
         return (<ReactNative.Text
           style={this.props.wrapStyle}
           key={`wrap_${index}`}
