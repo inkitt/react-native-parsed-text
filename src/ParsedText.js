@@ -81,6 +81,7 @@ class ParsedText extends React.Component {
           key={`parsedText-${index}`}
           {...this.props.childrenProps}
           {...props}
+          allowFontScaling={false}
         />
       );
     });
@@ -108,6 +109,7 @@ class ParsedText extends React.Component {
                 {...this.props.childrenProps}
                 {...props}
                 style={[parentStyle, style]}
+                allowFontScaling={false}
               />)
             });
             parts.push({ wrapType: 'View', items: row });
@@ -120,6 +122,7 @@ class ParsedText extends React.Component {
                 wrapType: 'View',
                 el: (<ReactNative.Text
                   key={`parsedText-${index}-${i}-text`}
+                  allowFontScaling={false}
                   {...this.props.childrenProps}
                   {...props}
                   style={[parentStyle, style]}
@@ -144,6 +147,7 @@ class ParsedText extends React.Component {
         return (<ReactNative.Text
           style={this.props.wrapStyle}
           key={`wrap_${index}`}
+          allowFontScaling={false}
         >
           {part.items.map((item) => (item.el))}
         </ReactNative.Text>);
@@ -166,6 +170,7 @@ class ParsedText extends React.Component {
       <ReactNative.Text
         ref={ref => this._root = ref}
         {...this.props}
+        allowFontScaling={false}
       >
         {this.getParsedText()}
       </ReactNative.Text>
