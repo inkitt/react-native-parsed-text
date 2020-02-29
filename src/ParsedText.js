@@ -99,7 +99,8 @@ class ParsedText extends React.Component {
         if (ReactNative.Platform.OS === 'android') {
           const { style: parentStyle } = this.props;
           const { style, ...remainder } = props;
-          if (style && style.textAlign === 'center') {
+          const isCentered = style && style.textAlign === 'center';
+          if (isCentered) {
             parts.push({ wrapType: 'Text', items: row });
             row = [];
             row.push({
@@ -115,19 +116,18 @@ class ParsedText extends React.Component {
             parts.push({ wrapType: 'View', items: row });
             row = [];
           } else {
-            const splitTextbyRows = props.children.split(/\n/);
-            splitTextbyRows.forEach((r, i) => {
-              props.children = r;
-              row.push({
-                wrapType: 'View',
-                el: (<ReactNative.Text
-                  key={`parsedText-${index}-${i}-text`}
-                  allowFontScaling={false}
-                  {...this.props.childrenProps}
-                  {...props}
-                  style={[parentStyle, style]}
-                />)
-              });
+            if (!props.children.match(/[^\n]+/g)) {
+              props.children = props.children.replace(/\n/g, '');
+            }
+            row.push({
+              wrapType: 'Text',
+              el: (<ReactNative.Text
+                key={`parsedText-${index}-${index}-text`}
+                allowFontScaling={false}
+                {...this.props.childrenProps}
+                {...props}
+                style={[parentStyle, style]}
+              />)
             });
           }
         }
@@ -155,12 +155,13 @@ class ParsedText extends React.Component {
       return (<ReactNative.View key={`wrap_${index}`}>{part.items.map((item) => (item.el))}</ReactNative.View>);
     });
   }
-
+  setWrapRef = (node) => this._root = node;
   render() {
     if (ReactNative.Platform.OS === 'android') {
       return (
         <ReactNative.View
-          ref={ref => this._root = ref}
+          accessibilityRole="text"
+          ref={this.setWrapRef}
         >
           {this.getParsedText()}
         </ReactNative.View>
@@ -168,7 +169,7 @@ class ParsedText extends React.Component {
     }
     return (
       <ReactNative.Text
-        ref={ref => this._root = ref}
+        ref={this.setWrapRef}
         {...this.props}
         allowFontScaling={false}
       >
