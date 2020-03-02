@@ -30,10 +30,12 @@ class ParsedText extends React.Component {
       PropTypes.oneOfType([defaultParseShape, customParseShape]),
     ),
     childrenProps: PropTypes.shape(ReactNative.Text.propTypes),
+    allowFontScaling: PropTypes.bool,
   };
 
   static defaultProps = {
     parse: null,
+    allowFontScaling: true,
     childrenProps: {},
   };
 
