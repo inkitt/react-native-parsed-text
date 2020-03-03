@@ -30,10 +30,12 @@ class ParsedText extends React.Component {
       PropTypes.oneOfType([defaultParseShape, customParseShape]),
     ),
     childrenProps: PropTypes.shape(ReactNative.Text.propTypes),
+    allowFontScaling: PropTypes.bool,
   };
 
   static defaultProps = {
     parse: null,
+    allowFontScaling: true,
     childrenProps: {},
   };
 
@@ -75,13 +77,14 @@ class ParsedText extends React.Component {
    * @param textExtraction
    */
   iosParsedText = (textExtraction) => {
+    const { allowFontScaling } = this.props;
     return textExtraction.parse().map((props, index) => {
       return (
         <ReactNative.Text
           key={`parsedText-${index}`}
           {...this.props.childrenProps}
           {...props}
-          allowFontScaling={false}
+          allowFontScaling={allowFontScaling}
         />
       );
     });
@@ -93,6 +96,7 @@ class ParsedText extends React.Component {
    * @param textExtraction
    */
   androidParsedText = (textExtraction) => {
+    const { allowFontScaling } = this.props;
     const parts = [];
     let row = [];
     textExtraction.parse().map((props, index) => {
@@ -110,7 +114,7 @@ class ParsedText extends React.Component {
                 {...this.props.childrenProps}
                 {...props}
                 style={[parentStyle, style]}
-                allowFontScaling={false}
+                allowFontScaling={allowFontScaling}
               />)
             });
             parts.push({ wrapType: 'View', items: row });
@@ -123,7 +127,7 @@ class ParsedText extends React.Component {
               wrapType: 'Text',
               el: (<ReactNative.Text
                 key={`parsedText-${index}-${index}-text`}
-                allowFontScaling={false}
+                allowFontScaling={allowFontScaling}
                 {...this.props.childrenProps}
                 {...props}
                 style={[parentStyle, style]}
@@ -147,7 +151,7 @@ class ParsedText extends React.Component {
         return (<ReactNative.Text
           style={this.props.wrapStyle}
           key={`wrap_${index}`}
-          allowFontScaling={false}
+          allowFontScaling={allowFontScaling}
         >
           {part.items.map((item) => (item.el))}
         </ReactNative.Text>);
@@ -157,6 +161,7 @@ class ParsedText extends React.Component {
   }
   setWrapRef = (node) => this._root = node;
   render() {
+    const { allowFontScaling } = this.props;
     if (ReactNative.Platform.OS === 'android') {
       return (
         <ReactNative.View
@@ -171,7 +176,7 @@ class ParsedText extends React.Component {
       <ReactNative.Text
         ref={this.setWrapRef}
         {...this.props}
-        allowFontScaling={false}
+        allowFontScaling={allowFontScaling}
       >
         {this.getParsedText()}
       </ReactNative.Text>
