@@ -120,7 +120,7 @@ class ParsedText extends React.Component {
             parts.push({ wrapType: 'View', items: row });
             row = [];
           } else {
-            if (!props.children.match(/[^\n]+/g)) {
+            if (typeof props.children === 'string' && !props.children.match(/[^\n]+/g)) {
               props.children = props.children.replace(/\n/g, '');
             }
             row.push({
@@ -143,7 +143,7 @@ class ParsedText extends React.Component {
     return parts.map((part, index) => {
       if (part.wrapType === 'Text') {
         const renderedText = part.items.reduce((p, c) => {
-          return p + c.el.props.children;
+          return p + (c.el.props.children || "");
         }, "");
         if (!renderedText && index === 0) {
           return null;
