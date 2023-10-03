@@ -66,6 +66,9 @@ class ParsedText extends React.Component {
     }
 
     const textExtraction = new TextExtraction(this.props.children, this.getPatterns());
+    if (ReactNative.Platform.OS === 'android' && this.props.useAndroidParsedTextV2) {
+      return this.androidParsedTextV2(textExtraction);
+    }
     if (ReactNative.Platform.OS === 'android') {
       return this.androidParsedText(textExtraction);
     }
@@ -86,6 +89,110 @@ class ParsedText extends React.Component {
           {...props}
           allowFontScaling={allowFontScaling}
         />
+      );
+    });
+  }
+
+  /**
+   * androidParsedTextV2 For some components androidParsedText cannot render the layout correctly. androidParsedTextV2 - a temporary solution so as not to touch androidParsedText which was used in reader.
+   * @returns {any[]}
+   * @param textExtraction
+   */
+  androidParsedTextV2 = (textExtraction) => {
+    const { allowFontScaling } = this.props;
+    const parts = [];
+    let rowText = [];
+    let rowView = [];
+    textExtraction.parse().map((props, index) => {
+      const { style: parentStyle } = this.props;
+      const { style, ...remainder } = props;
+
+      if (typeof props.children === 'string') {
+        const lines = props.children.split('\n');
+        lines.forEach((line, lineIndex) => {
+          rowText.push({
+            wrapType: 'Text',
+            el: (
+              <ReactNative.Text
+                key={`parsedText-${index}-${lineIndex}-text`}
+                allowFontScaling={allowFontScaling}
+                {...this.props.childrenProps}
+                {...remainder}
+                style={[parentStyle, style]}
+              >
+                {line}
+              </ReactNative.Text>
+            )
+          });
+
+          if (lineIndex < lines.length - 1) {
+            rowText.push({
+              wrapType: 'Text',
+              el: (
+                <ReactNative.Text
+                  key={`parsedText-${index}-${lineIndex}-break`}
+                  style={[parentStyle, style]}
+                  allowFontScaling={allowFontScaling}
+                >
+                  {'\n'}
+                </ReactNative.Text>
+              )
+            });
+          }
+        });
+      } else {
+        rowView.push({
+          wrapType: 'View',
+          el: (
+            <ReactNative.View
+              key={`parsedText-${index}-view`}
+              allowFontScaling={allowFontScaling}
+              {...this.props.childrenProps}
+              {...props}
+              style={[parentStyle, style]}
+            />
+          )
+        });
+      }
+
+      if (style && style.textAlign === 'center') {
+        parts.push({ wrapType: 'Text', items: rowText });
+        rowText = [];
+      }
+    });
+
+    if (rowText.length) {
+      parts.push({ wrapType: rowText[0].wrapType, items: rowText });
+    }
+
+    if (rowView.length) {
+      parts.push({ wrapType: rowView[0].wrapType, items: rowView });
+    }
+
+    return parts.map((part, index) => {
+
+      if (part.wrapType === 'Text') {
+        const renderedText = part.items.reduce((p, c) => {
+          return p + (c.el.props.children || "");
+        }, "");
+
+        if (!renderedText && index === 0) {
+          return null;
+        }
+        return (
+          <ReactNative.Text
+            style={this.props.wrapStyle}
+            key={`wrap_${index}`}
+            allowFontScaling={allowFontScaling}
+          >
+            {part.items.map((item) => item.el)}
+          </ReactNative.Text>
+        );
+      }
+      return (
+        <ReactNative.View key={`wrap_${index}`}>
+          {part.items.map((item) => item.el)}
+        </ReactNative.View>
       );
     });
   }
