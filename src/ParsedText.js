@@ -17,11 +17,11 @@ const defaultParseShape = PropTypes.shape({
 
 const customParseShape = PropTypes.shape({
   ...ReactNative.Text.propTypes,
-  pattern: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(RegExp)]).isRequired,
+  pattern: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(RegExp)])
+    .isRequired,
 });
 
 class ParsedText extends React.Component {
-
   static displayName = 'ParsedText';
 
   static propTypes = {
@@ -65,8 +65,14 @@ class ParsedText extends React.Component {
       return this.props.children;
     }
 
-    const textExtraction = new TextExtraction(this.props.children, this.getPatterns());
-    if (ReactNative.Platform.OS === 'android' && this.props.useAndroidParsedTextV2) {
+    const textExtraction = new TextExtraction(
+      this.props.children,
+      this.getPatterns(),
+    );
+    if (
+      ReactNative.Platform.OS === 'android' &&
+      this.props.useAndroidParsedTextV2
+    ) {
       return this.androidParsedTextV2(textExtraction);
     }
     if (ReactNative.Platform.OS === 'android') {
@@ -91,7 +97,7 @@ class ParsedText extends React.Component {
         />
       );
     });
-  }
+  };
 
   /**
    * androidParsedTextV2 For some components androidParsedText cannot render the layout correctly. androidParsedTextV2 - a temporary solution so as not to touch androidParsedText which was used in reader.
@@ -122,7 +128,7 @@ class ParsedText extends React.Component {
               >
                 {line}
               </ReactNative.Text>
-            )
+            ),
           });
 
           if (lineIndex < lines.length - 1) {
@@ -136,7 +142,7 @@ class ParsedText extends React.Component {
                 >
                   {'\n'}
                 </ReactNative.Text>
-              )
+              ),
             });
           }
         });
@@ -151,7 +157,7 @@ class ParsedText extends React.Component {
               {...props}
               style={[parentStyle, style]}
             />
-          )
+          ),
         });
       }
 
@@ -170,12 +176,94 @@ class ParsedText extends React.Component {
     }
 
     return parts.map((part, index) => {
-
       if (part.wrapType === 'Text') {
         const renderedText = part.items.reduce((p, c) => {
-          return p + (c.el.props.children || "");
-        }, "");
+          return p + (c.el.props.children || '');
+        }, '');
 
+        if (!renderedText && index === 0) {
+          return null;
+        }
+        return (
+          <ReactNative.Text
+            style={this.props.wrapStyle}
+            key={`wrap_${index}`}
+            allowFontScaling={allowFontScaling}
+            {...this.props}
+          >
+            {part.items.map((item) => item.el)}
+          </ReactNative.Text>
+        );
+      }
+      return (
+        <ReactNative.View key={`wrap_${index}`}>
+          {part.items.map((item) => item.el)}
+        </ReactNative.View>
+      );
+    });
+  };
+
+  /**
+   * Parse text for android devices
+   * @returns {any[]}
+   * @param textExtraction
+   */
+  androidParsedText = (textExtraction) => {
+    const { allowFontScaling } = this.props;
+    const parts = [];
+    let row = [];
+    textExtraction.parse().map((props, index) => {
+      if (ReactNative.Platform.OS === 'android') {
+        const { style: parentStyle } = this.props;
+        const { style, ...remainder } = props;
+        const isCentered = style && style.textAlign === 'center';
+        if (isCentered) {
+          parts.push({ wrapType: 'Text', items: row });
+          row = [];
+          row.push({
+            wrapType: 'View',
+            el: (
+              <ReactNative.Text
+                key={`parsedText-${index}-view`}
+                {...this.props.childrenProps}
+                {...props}
+                style={[parentStyle, style]}
+                allowFontScaling={allowFontScaling}
+              />
+            ),
+          });
+          parts.push({ wrapType: 'View', items: row });
+          row = [];
+        } else {
+          if (
+            typeof props.children === 'string' &&
+            !props.children.match(/[^\n]+/g)
+          ) {
+            props.children = props.children.replace(/\n/g, '');
+          }
+          row.push({
+            wrapType: 'Text',
+            el: (
+              <ReactNative.Text
+                key={`parsedText-${index}-${index}-text`}
+                allowFontScaling={allowFontScaling}
+                {...this.props.childrenProps}
+                {...props}
+                style={[parentStyle, style]}
+              />
+            ),
+          });
+        }
+      }
+    });
+    if (row.length) {
+      parts.push({ wrapType: row[0].wrapType, items: row });
+    }
+    return parts.map((part, index) => {
+      if (part.wrapType === 'Text') {
+        const renderedText = part.items.reduce((p, c) => {
+          return p + (c.el.props.children || '');
+        }, '');
         if (!renderedText && index === 0) {
           return null;
         }
@@ -195,86 +283,13 @@ class ParsedText extends React.Component {
         </ReactNative.View>
       );
     });
-  }
-
-  /**
-   * Parse text for android devices
-   * @returns {any[]}
-   * @param textExtraction
-   */
-  androidParsedText = (textExtraction) => {
-    const { allowFontScaling } = this.props;
-    const parts = [];
-    let row = [];
-    textExtraction.parse().map((props, index) => {
-        if (ReactNative.Platform.OS === 'android') {
-          const { style: parentStyle } = this.props;
-          const { style, ...remainder } = props;
-          const isCentered = style && style.textAlign === 'center';
-          if (isCentered) {
-            parts.push({ wrapType: 'Text', items: row });
-            row = [];
-            row.push({
-              wrapType: 'View',
-              el: (<ReactNative.Text
-                key={`parsedText-${index}-view`}
-                {...this.props.childrenProps}
-                {...props}
-                style={[parentStyle, style]}
-                allowFontScaling={allowFontScaling}
-              />)
-            });
-            parts.push({ wrapType: 'View', items: row });
-            row = [];
-          } else {
-            if (typeof props.children === 'string' && !props.children.match(/[^\n]+/g)) {
-              props.children = props.children.replace(/\n/g, '');
-            }
-            row.push({
-              wrapType: 'Text',
-              el: (<ReactNative.Text
-                key={`parsedText-${index}-${index}-text`}
-                allowFontScaling={allowFontScaling}
-                {...this.props.childrenProps}
-                {...props}
-                style={[parentStyle, style]}
-              />)
-            });
-          }
-        }
-      }
-    );
-    if (row.length) {
-      parts.push({ wrapType: row[0].wrapType, items: row });
-    }
-    return parts.map((part, index) => {
-      if (part.wrapType === 'Text') {
-        const renderedText = part.items.reduce((p, c) => {
-          return p + (c.el.props.children || "");
-        }, "");
-        if (!renderedText && index === 0) {
-          return null;
-        }
-        return (<ReactNative.Text
-          style={this.props.wrapStyle}
-          key={`wrap_${index}`}
-          allowFontScaling={allowFontScaling}
-        >
-          {part.items.map((item) => (item.el))}
-        </ReactNative.Text>);
-      }
-      return (<ReactNative.View key={`wrap_${index}`}>{part.items.map((item) => (item.el))}</ReactNative.View>);
-    });
-  }
-  setWrapRef = (node) => this._root = node;
+  };
+  setWrapRef = (node) => (this._root = node);
   render() {
     const { allowFontScaling } = this.props;
     if (ReactNative.Platform.OS === 'android') {
       return (
-        <ReactNative.View
-          accessibilityRole="text"
-          ref={this.setWrapRef}
-        >
+        <ReactNative.View accessibilityRole="text" ref={this.setWrapRef}>
           {this.getParsedText()}
         </ReactNative.View>
       );
@@ -289,7 +304,6 @@ class ParsedText extends React.Component {
       </ReactNative.Text>
     );
   }
-
 }
 
 export default ParsedText;
